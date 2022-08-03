@@ -1,0 +1,1076 @@
+---
+title: "Cluster Stats Project"
+author: "Amy Park"
+date: '2022-06-16'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+#Dependencies
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(ggpubr)
+library(tibble)
+library(rogme)
+library(beepr)
+library(cowplot)
+library(facetscales)
+source("./functions/theme_gar.txt") # define ggplot theme 
+source("./functions/trimpval.txt") # get one-sample t-test on trimmed means 
+source("./functions/functions.txt")
+library(remotes)
+#remotes::install_github("HankStevens/primer")
+library(primer)
+library(tidyr)
+```
+
+### Load Data
+
+```{r}
+bubcontclu <-
+  read.delim("fto_onset_bundle/bubcont2_t2_cluster_onsets.txt", header = FALSE)
+names(bubcontclu)[1] <- "session1"
+bbclu <- melt(bubcontclu)
+bbclu$V <- "Cluster"
+bubcontmax <-
+  read.delim("fto_onset_bundle/bubcont2_t2_max_onsets.txt", header = FALSE)
+names(bubcontmax)[1] <- "session1"
+bbmax <- melt(bubcontmax)
+bbmax$V <- "Max"
+bubcontfdr <-
+  read.delim("fto_onset_bundle/bubcont2_t2_fdr_onsets.txt", header = FALSE)
+names(bubcontclu)[1] <- "session1"
+bbfdr <- melt(bubcontfdr)
+bbfdr$V <- "FDR"
+bubdetclu <-
+  read.delim("fto_onset_bundle/bubdetect_t2_cluster_onsets.txt", header = FALSE)
+names(bubdetclu)[1] <- "session1"
+names(bubdetclu)[2] <- "session2"
+bbdclu <- melt(bubdetclu)
+bbdclu$V <- "Cluster"
+bbdclu2 <- bbdclu[1:35, ]
+bubdetfdr <-
+  read.delim("fto_onset_bundle/bubdetect_t2_fdr_onsets.txt", header = FALSE)
+names(bubdetfdr)[1] <- "session1"
+names(bubdetfdr)[2] <- "session2"
+bbdfdr <- melt(bubdetfdr)
+bbdfdr$V <- "FDR"
+bbdfdr2 <- bbdfdr[1:35, ]
+bubdetmax <-
+  read.delim("fto_onset_bundle/bubdetect_t2_max_onsets.txt", header = FALSE)
+names(bubdetmax)[1] <- "session1"
+names(bubdetmax)[2] <- "session2"
+bbdmax <- melt(bubdetmax)
+bbdmax$V <- "Max"
+bbdmax2 <- bbdmax[1:35, ]
+bubinvclu <-
+  read.delim("fto_onset_bundle/bubinv_t2_cluster_onsets.txt", header = FALSE)
+names(bubinvclu)[1] <- "session1"
+names(bubinvclu)[2] <- "session2"
+bbiclu <- melt(bubinvclu)
+bbiclu$V <- "Cluster"
+bbiclu2 <- bbiclu[1:10, ]
+bubinvfdr <-
+  read.delim("fto_onset_bundle/bubinv_t2_fdr_onsets.txt", header = FALSE)
+names(bubinvfdr)[1] <- "session1"
+names(bubinvfdr)[2] <- "session2"
+bbifdr <- melt(bubinvfdr)
+bbifdr$V <- "FDR"
+bbifdr2 <- bbifdr[1:10, ]
+bubinvmax <-
+  read.delim("fto_onset_bundle/bubinv_t2_max_onsets.txt", header = FALSE)
+names(bubinvmax)[1] <- "session1"
+names(bubinvmax)[2] <- "session2"
+bbimax <- melt(bubinvmax)
+bbimax$V <- "Max"
+bbimax2 <- bbimax[1:10, ]
+fhtclu <-
+  read.delim("fto_onset_bundle/fhtonsets_t2_cluster_onsets.txt", header = FALSE)
+names(fhtclu)[1] <- "session1"
+names(fhtclu)[2] <- "session2"
+fhc <- melt(fhtclu)
+fhc$V <- "Cluster"
+fhc2 <- fhc[1:8, ]
+fhtfdr <-
+  read.delim("fto_onset_bundle/fhtonsets_t2_fdr_onsets.txt", header = FALSE)
+names(fhtfdr)[1] <- "session1"
+names(fhtfdr)[2] <- "session2"
+fhf <- melt(fhtfdr)
+fhf$V <- "FDR"
+fhf2 <- fhf[1:8, ]
+fhtmax <-
+  read.delim("fto_onset_bundle/fhtonsets_t2_max_onsets.txt", header = FALSE)
+names(fhtmax)[1] <- "session1"
+names(fhtmax)[2] <- "session2"
+fhm <- melt(fhtmax)
+fhm$V <- "Max"
+fhm2 <- fhm[1:8, ]
+fht2 <-
+  read.delim("fto_onset_bundle/fhtonsets_twosessions.txt", header = FALSE)
+ftoclu <-
+  read.delim("fto_onset_bundle/ftonsets_t2_cluster_onsets.txt", header = FALSE)
+names(ftoclu)[1] <- "session1"
+names(ftoclu)[2] <- "session2"
+foc <- melt(ftoclu)
+foc$V <- "Cluster"
+foc2 <- foc[1:120, ]
+ftofdr <-
+  read.delim("fto_onset_bundle/ftonsets_t2_fdr_onsets.txt", header = FALSE)
+names(ftofdr)[1] <- "session1"
+names(ftofdr)[2] <- "session2"
+fof <- melt(ftofdr)
+fof$V <- "FDR"
+fof2 <- fof[1:120, ]
+ftomax <-
+  read.delim("fto_onset_bundle/ftonsets_t2_max_onsets.txt", header = FALSE)
+names(ftomax)[1] <- "session1"
+names(ftomax)[2] <- "session2"
+fom <- melt(ftomax)
+fom$V <- "Max"
+fom2 <- fom[1:120, ]
+fto2 <-
+  read.delim("fto_onset_bundle/ftonsets_twosessions.txt", header = FALSE)
+topdownclu <-
+  read.delim("fto_onset_bundle/topdown_t2_cluster_onsets.txt", header = FALSE)
+names(topdownclu)[1] <- "session1"
+tdc <- melt(topdownclu)
+tdc$V <- "Cluster"
+topdownmax <-
+  read.delim("fto_onset_bundle/topdown_t2_max_onsets.txt", header = FALSE)
+names(topdownmax)[1] <- "session1"
+tdm <- melt(topdownmax)
+tdm$V <- "Max"
+topdownfdr <-
+  read.delim("fto_onset_bundle/topdown_t2_fdr_onsets.txt", header = FALSE)
+names(topdownfdr)[1] <- "session1"
+tdf <- melt(topdownfdr)
+tdf$V <- "FDR"
+ft10clu <-
+  read.delim("ft10_sim_t2_n50_cluster_onsets.txt", header = FALSE)
+ft10_clu <- ft10clu[1:2, ]
+ft10cllu <- as.data.frame(t(ft10_clu))
+names(ft10cllu)[1] <- "session1"
+names(ft10cllu)[2] <- "session2"
+ft_10clu <- melt(ft10cllu)
+ft_10clu$V <- "Cluster"
+ft10clu2 <- ft_10clu[1:4, ]
+ft10fdr <-
+  read.delim("ft10_sim_t2_n50_fdr_onsets.txt", header = FALSE)
+ft10_fdr <- ft10fdr[1:2, ]
+ft10fddr <- as.data.frame(t(ft10_fdr))
+names(ft10fddr)[1] <- "session1"
+names(ft10fddr)[2] <- "session2"
+ft_10fdr <- melt(ft10fddr)
+ft_10fdr$V <- "FDR"
+ft10fdr2 <- ft_10fdr[1:4, ]
+ft10max <-
+  read.delim("ft10_sim_t2_n50_max_onsets.txt", header = FALSE)
+ft10_max <- ft10max[1:2, ]
+ft10maxx <- as.data.frame(t(ft10_max))
+names(ft10maxx)[1] <- "session1"
+names(ft10maxx)[2] <- "session2"
+ft_10max <- melt(ft10maxx)
+ft_10max$V <- "Max"
+ft10max2 <- ft_10max[1:4, ]
+```
+
+
+```{r}
+#Combine experiments
+bundle <-
+  rbind(
+    bbclu,
+    bbfdr,
+    bbmax,
+    bbdclu2,
+    bbdfdr2,
+    bbdmax2,
+    bbiclu2,
+    bbifdr2,
+    bbimax2,
+    fhc2,
+    fhf2,
+    fhm2,
+    foc2,
+    fof2,
+    fom2,
+    tdc,
+    tdf,
+    tdm,
+    ft10clu2,
+    ft10fdr2,
+    ft10max2
+  )
+bundle[bundle == 0] <- NA
+bundle[bundle == 999] <- NA
+bundl <- bundle %>% na.omit()
+```
+
+
+```{r}
+#density plot of all data
+p2 <-
+  ggplot(bundl, aes(x = value, color = V)) +
+  geom_density(kernel = "gaussian") + geom_rug() +
+  labs(x = "Time in ms", y = element_blank()) + 
+  theme(legend.position = "none")
+```
+
+```{r}
+#variance
+varmax <- as.data.frame(subset(bundl, V == 'Max'))
+varclu <- as.data.frame(subset(bundl, V == 'Cluster'))
+varfdr <- as.data.frame(subset(bundl, V == 'FDR'))
+vm <- var(varmax)
+vc <- var(varclu)
+vf <- var(varfdr)
+vard <- data.frame(
+  variance = c(657.719, 956.1086, 897.479),
+  group = c("Cluster", "FDR", "Max")
+)
+#bar plot of variance
+vog <- ggplot(vard, aes(x = group, y = variance, fill = group)) +
+  geom_bar(stat = "identity") + geom_text(aes(label = round(variance))) + 
+  labs(x = "Method", y = "Variance")
+fig1 <- ggarrange(p2, vog, labels = c("A", "B"))
+#save figure
+ggsave(
+  "fulldata",
+  plot = fig1,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 7,
+  height = 3,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+
+
+```{r}
+#One dimensional scatter plots w/ deciles
+#max
+maxdec <-
+  as.data.frame(quantile(varmax$value, probs = seq(.1, .9, by = .1)))
+names(maxdec)[1] <- "deciles"
+md <- ggplot(varmax, aes(x = value, y = V)) +
+  geom_jitter(color = "#619CFF") + 
+  geom_vline(xintercept = maxdec$deciles) + 
+  labs(x = "Time in ms", y = element_blank())
+#cluster
+cludec <-
+  as.data.frame(quantile(varclu$value, probs = seq(.1, .9, by = .1)))
+names(cludec)[1] <- "deciles"
+cd <- ggplot(varclu, aes(x = value, y = V)) +
+  geom_jitter(color = "#F8766D") + 
+  geom_vline(xintercept = cludec$deciles) + 
+  labs(x = element_blank(), y = element_blank())
+#fdr
+fdrdec <-
+  as.data.frame(quantile(varfdr$value, probs = seq(.1, .9, by = .1)))
+names(fdrdec)[1] <- "deciles"
+fd <- ggplot(varfdr, aes(x = value, y = V)) +
+  geom_jitter(color = "#00BA38") + 
+  geom_vline(xintercept = fdrdec$deciles) + 
+  labs(x = element_blank(), y = "Method")
+fig2 <- ggarrange(cd, fd, md, ncol = 1)
+#save figure
+ggsave(
+  "scatterdec",
+  plot = fig2,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 6,
+  height = 3,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+
+```{r}
+#2 sessions
+bubdetclu$variable <- "cluster"
+bubdetfdr$variable <- "FDR"
+bubdetfdr[bubdetfdr == 999] <- NA
+bubdetmax$variable <- "Max"
+bubinvclu$variable <- "cluster"
+bubinvfdr$variable <- "FDR"
+bubinvmax$variable <- "Max"
+fhtclu$variable <- "cluster"
+fhtfdr$variable <- "FDR"
+fhtmax$variable <- "Max"
+ftoclu$variable <- "cluster"
+ftofdr$variable <- "FDR"
+ftomax$variable <- "Max"
+ft10cllu$variable <- "cluster"
+ft10fddr$variable <- "FDR"
+ft10maxx$variable <- "Max"
+
+compd <-
+  rbind(
+    bubdetclu,
+    bubdetfdr,
+    bubdetmax,
+    bubinvclu,
+    bubinvfdr,
+    bubinvmax,
+    fhtclu,
+    fhtfdr,
+    fhtmax,
+    ftoclu,
+    ftofdr,
+    ftomax,
+    ft10cllu,
+    ft10fddr,
+    ft10maxx
+  )
+compd[compd == 0] <- NA
+compd[compd == 999] <- NA
+comp <- compd %>% na.omit()
+```
+
+```{r}
+dif <- (comp$session1 - comp$session2)
+diff <- as.data.frame(dif)
+dirf <- cbind(comp, diff)
+#plot session 1 - session 2 difference
+p4 <- ggplot(dirf, aes(x = dif, color = variable)) +
+  geom_density() + geom_rug() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(x = "Difference S1-S2", y = element_blank()) + 
+  theme(legend.position = "none")
+
+```
+
+```{r}
+#variance
+varmax2 <- as.data.frame(subset(comp, variable == 'Max'))
+varclu2 <- as.data.frame(subset(comp, variable == 'cluster'))
+varfdr2 <- as.data.frame(subset(comp, variable == 'FDR'))
+vm1 <- var(varmax2$session1)
+vc1 <- var(varclu2$session1)
+vf1 <- var(varfdr2$session1)
+vm2 <- var(varmax2$session2)
+vc2 <- var(varclu2$session2)
+vf2 <- var(varfdr2$session2)
+vard2 <- data.frame(
+  value = c(vc1, vc2, vf1, vf2, vm1, vm2),
+  session = c(
+    "Session 1",
+    "Session 2",
+    "Session 1",
+    "Session 2",
+    "Session 1",
+    "Session 2"
+  ),
+  method = c("Cluster", "Cluster", "FDR", "FDR", "Max", "Max")
+)
+#plot variance between sessions
+vsp <- ggplot(vard2, aes(x = session, y = value)) +
+  geom_bar(aes(fill = method), position = "dodge", stat = "identity") +
+  geom_text(aes(label = round(value))) + labs(x = "Session", y = "Variance")
+```
+
+```{r}
+fig3 <- ggarrange(p4, vsp, nrow = 1, labels = c("A", "B"))
+#save figure
+ggsave(
+  "2sessions",
+  plot = fig3,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 6,
+  height = 3,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+
+### Load Data
+```{r}
+#FT10 original data
+fdr1 <- read.delim("ft10_t2_fdr_onsets.txt", header = FALSE)
+max1 <- read.delim("ft10_t2_max_onsets.txt", header = FALSE)
+clu1 <- read.delim("ft10_t2_cluster_onsets.txt", header = FALSE)
+fdr2 <- as.data.frame(t(fdr1))
+fdr <- fdr2 %>% mutate(observation = 1:n())
+max2 <- as.data.frame(t(max1))
+max <- max2 %>% mutate(observation = 1:n())
+clu2 <- as.data.frame(t(clu1))
+clu <- clu2 %>% mutate(observation = 1:n())
+```
+
+```{r}
+fdr3 <- melt(fdr2)
+names(fdr3)[2] <- "FDR"
+max3 <- melt(max2)
+names(max3)[2] <- "Max"
+clu3 <- melt(clu2)
+names(clu3)[2] <- "Cluster"
+names(clu3)[1] <- "void"
+fnc <- cbind(clu3, fdr3)
+mnc <- cbind(clu3, max3)
+```
+
+### FDR 
+
+```{r}
+#participant 1
+fdrp1 <- ggplot(fdr, aes(x = V1, y = observation)) +
+  geom_point() +
+  geom_vline(xintercept = median(fdr$V1), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) +
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank(), title = "Participant 1   FDR")
+#participant 2
+fdrp2 <- ggplot(fdr, aes(x = V2, y = observation)) +
+  geom_point() +
+  geom_vline(xintercept = median(fdr$V2), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) +
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank(), title = "Participant 2")
+#participant 3
+fdrp3 <- ggplot(fdr, aes(x = V3, y = observation)) +
+  geom_point() +
+  geom_vline(xintercept = median(fdr$V3), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) +
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank(), title = "Participant 3")
+#participant 4
+fdrp4 <- ggplot(fdr, aes(x = V4, y = observation)) +
+  geom_point() +
+  geom_vline(xintercept = median(fdr$V4), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) +
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank(), title = "Participant 4")
+```
+
+### Max
+
+```{r}
+#participant 1
+maxp1 <- ggplot(max, aes(x = V1, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(max$V1), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank(), title= "Max")
+#participant 2
+maxp2 <- ggplot(max, aes(x = V2, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(max$V2), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank())
+#participant 3
+maxp3 <- ggplot(max, aes(x = V3, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(max$V3), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank())
+#participant 4
+maxp4 <- ggplot(max, aes(x = V4, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(max$V4), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = "Onset time in ms", y = element_blank())
+```
+
+### Cluster
+
+```{r}
+#participant 1
+clup1 <- ggplot(clu, aes(x = V1, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(clu$V1), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank(), title= "Cluster")
+#participant 2
+clup2 <- ggplot(clu, aes(x = V2, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(clu$V2), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank())
+#participant 3
+clup3 <- ggplot(clu, aes(x = V3, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(clu$V3), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank())
+#participant 4
+clup4 <- ggplot(clu, aes(x = V4, y = observation)) +
+  geom_point() + 
+  geom_vline(xintercept = median(clu$V4), linetype = "dashed") +
+  scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) + 
+  xlim(20, 120) +
+  labs(x = element_blank(), y = element_blank())
+```
+
+```{r}
+mdot <- ggarrange(
+  fdrp1,
+  maxp1,
+  clup1,
+  fdrp2,
+  maxp2,
+  clup2,
+  fdrp3,
+  maxp3,
+  clup3,
+  fdrp4,
+  maxp4,
+  clup4,
+  nrow = 4,
+  ncol = 3
+)
+fig4 <- annotate_figure(mdot, left = text_grob("Session", rot = 90))
+#save figure
+ggsave(
+  "10sessions",
+  plot = fig4,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 7,
+  height = 8,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+
+### Max & FDR vs Cluster
+
+```{r}
+#FDR onsets vs cluster onsets
+mvf <- ggplot(fnc, aes(x = Cluster, y = FDR)) +
+  geom_point() +  geom_abline(intercept = 0,
+                              slope = 1,
+                              color = "red") +
+  geom_vline(xintercept = median(fnc$Cluster), linetype = "dashed") +
+  geom_hline(yintercept = median(fnc$FDR), linetype = "dashed") +
+  xlim(68, 120) + ylim(75, 110) +
+  labs(x = element_blank(), y = "FDR onsets time in ms", title = "FDR vs Cluster")
+#Max onsets vs cluster onets
+mvc <- ggplot(mnc, aes(x = Cluster, y = Max)) +
+  geom_point() +  geom_abline(intercept = 0,
+                              slope = 1,
+                              color = "red") +
+  geom_vline(xintercept = median(mnc$Cluster), linetype = "dashed") +
+  geom_hline(yintercept = median(mnc$Max), linetype = "dashed") +
+  xlim(68, 120) + ylim(75, 110) +
+  labs(x = element_blank(), y = "Max onsets time in ms", title = "Max vs Cluster")
+
+```
+  
+```{r}
+cvmnf <- ggarrange(mvc, mvf, labels = c("A", "B"))
+fig5 <-
+  annotate_figure(cvmnf, bottom = text_grob("Cluster onsets time in ms"))
+#save figure
+ggsave(
+  "fnmvcfig",
+  plot = fig5,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 6,
+  height = 3,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+  
+```{r}
+#50 simulation data
+fdrn50 <-
+  read.delim("ft10_sim_t2_n50_fdr_onsets.txt", header = FALSE)
+clun50 <-
+  read.delim("ft10_sim_t2_n50_cluster_onsets.txt", header = FALSE)
+maxn50 <-
+  read.delim("ft10_sim_t2_n50_max_onsets.txt", header = FALSE)
+maxn50[maxn50 == 999] <- NA
+fdrn50[fdrn50 == 999] <- NA
+clun50[clun50 == 999] <- NA
+maxp1_1 <- as.data.frame(maxn50[, 1], drop = false)
+maxp1_2 <- drop_na(maxp1_1)
+maxp2_1 <- as.data.frame(maxn50[, 2], drop = false)
+maxp2_2 <- maxp2_1 %>% na.omit()
+maxp3_1 <- as.data.frame(maxn50[, 3], drop = false)
+maxp3_2 <- maxp3_1 %>% na.omit()
+maxp4_1 <- as.data.frame(maxn50[, 4], drop = false)
+maxp4_2 <- maxp4_1 %>% na.omit()
+fdrp1_1 <- as.data.frame(fdrn50[, 1], drop = false)
+fdrp1_2 <- fdrp1_1 %>% na.omit()
+fdrp2_1 <- as.data.frame(fdrn50[, 2], drop = false)
+fdrp2_2 <- fdrp2_1 %>% na.omit()
+fdrp3_1 <- as.data.frame(fdrn50[, 3], drop = false)
+fdrp3_2 <- fdrp3_1 %>% na.omit()
+fdrp4_1 <- as.data.frame(fdrn50[, 4], drop = false)
+fdrp4_2 <- fdrp4_1 %>% na.omit()
+clup1_1 <- as.data.frame(clun50[, 1], drop = false)
+clup1_2 <- clup1_1 %>% na.omit()
+clup2_1 <- as.data.frame(clun50[, 2], drop = false)
+clup2_2 <- clup2_1 %>% na.omit()
+clup3_1 <- as.data.frame(clun50[, 3], drop = false)
+clup3_2 <- clup3_1 %>% na.omit()
+clup4_1 <- as.data.frame(clun50[, 4], drop = false)
+clup4_2 <- clup4_1 %>% na.omit()
+
+```
+  
+### 50 Simulation
+#### Max
+
+```{r}
+#Participant 1
+names(maxp1_2) <- "onsets"
+maxf1 <- as.numeric(unlist(maxp1_2))
+#MAE
+max_mae_v1 <- mean(abs(maxf1 - median(max2$V1)))
+maxsmpd1 <- median(maxf1)
+#Bias
+maxv1_bias <- (maxsmpd1 - median(max2$V1))
+#plot histogram
+q1 <- ggplot(maxp1_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(max2$V1), maxsmpd1),
+             color = c("blue", "black")) +
+  geom_histogram(fill = "#619CFF", color = "darkblue") +
+  labs(x = element_blank(), y = element_blank(), title = "P1 Max")
+#Participant 2
+names(maxp2_2) <- "onsets"
+maxf2 <- as.numeric(unlist(maxp2_2))
+#MAE
+max_mae_v2 <- mean(abs(maxf2 - median(max2$V2)))
+maxsmpd2 <- median(maxf2)
+#Bias
+maxv2_bias <- (maxsmpd2 - median(max2$V2))
+#Plot histogram
+q2 <- ggplot(maxp2_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(max2$V2), maxsmpd2),
+             color = c("blue", "black")) +
+  geom_histogram(fill = "#619CFF", color = "darkblue") +
+  labs(x = element_blank(), y = element_blank(), title = "P2 Max")
+#Participant 3
+names(maxp3_2) <- "onsets"
+maxf3 <- as.numeric(unlist(maxp3_2))
+#MAE
+max_mae_v3 <- mean(abs(maxf3 - median(max2$V3)))
+maxsmpd3 <- median(maxf3)
+#Bias
+maxv3_bias <- (maxsmpd3 - median(max2$V3))
+#Plot histogram
+q3 <- ggplot(maxp3_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(max2$V3), maxsmpd3),
+             color = c("blue", "black")) +
+  geom_histogram(fill = "#619CFF", color = "darkblue") +
+  labs(x = element_blank(), y = element_blank(), title = "P3 Max")
+#Participant 4
+names(maxp4_2) <- "onsets"
+maxf4 <- as.numeric(unlist(maxp4_2))
+#MAE
+max_mae_v4 <- mean(abs(maxf4 - median(max2$V4)))
+maxsmpd4 <- median(maxf4)
+#Bias
+maxv4_bias <- (maxsmpd4 - median(max2$V4))
+#Plot histogram
+q4 <- ggplot(maxp4_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(max2$V4), maxsmpd4),
+             color = c("blue", "black")) +
+  geom_histogram(fill = "#619CFF", color = "darkblue") +
+  labs(x = element_blank(), y = element_blank(), title = "P4 Max")
+```
+  
+#### FDR
+  
+```{r}
+#Participant 1
+names(fdrp1_2) <- "onsets"
+fdrf1 <- as.numeric(unlist(fdrp1_2))
+#MAE
+fdr_mae_v1 <- mean(abs(fdrf1 - median(fdr2$V1)))
+fdrsmpd1 <- median(fdrf1)
+#Bias
+fdrv1_bias <- (fdrsmpd1 - median(fdr2$V1))
+#Plot histogram
+q5 <- ggplot(fdrp1_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(fdr2$V1), fdrsmpd1), color= c("blue", "black")) +
+  geom_histogram(fill = "#00BA38", color = "darkgreen") +
+  labs(x = element_blank(), y = element_blank(), title = "P1 FDR")
+#Participant 2
+names(fdrp2_2) <- "onsets"
+fdrf2 <- as.numeric(unlist(fdrp2_2))
+#MAE
+fdr_mae_v2 <- mean(abs(fdrf2 - median(fdr2$V2)))
+fdrsmpd2 <- median(fdrf2)
+#Bias
+fdrv2_bias <- (fdrsmpd2 - median(fdr2$V2))
+#Plot histogram
+q6 <- ggplot(fdrp2_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(fdr2$V2), fdrsmpd2), color= c("blue", "black")) +
+  geom_histogram(fill = "#00BA38", color = "darkgreen") +
+  labs(x = element_blank(), y = element_blank(), title = "P2 FDR")
+#Participant 3
+names(fdrp3_2) <- "onsets"
+fdrf3 <- as.numeric(unlist(fdrp3_2))
+#MAE
+fdr_mae_v3 <- mean(abs(fdrf3 - median(fdr2$V3)))
+fdrsmpd3 <- median(fdrf3)
+#Bias
+fdrv3_bias <- (fdrsmpd3 - median(fdr2$V3))
+#Plot hisogram
+q7 <- ggplot(fdrp3_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(fdr2$V3), fdrsmpd3), color= c("blue", "black")) +
+  geom_histogram(fill = "#00BA38", color = "darkgreen") +
+  labs(x = element_blank(), y = element_blank(), title = "P3 FDR")
+#Participant 4
+names(fdrp4_2) <- "onsets"
+fdrf4 <- as.numeric(unlist(fdrp4_2))
+#MAE
+fdr_mae_v4 <- mean(abs(fdrf4 - median(fdr2$V4)))
+fdrsmpd4 <- median(fdrf4)
+#Bias
+fdrv4_bias <- (fdrsmpd4 - median(fdr2$V4))
+#Plot histogram
+q8 <- ggplot(fdrp4_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(fdr2$V4), fdrsmpd4), color= c("blue", "black")) +
+  geom_histogram(fill = "#00BA38", color = "darkgreen") +
+  labs(x = element_blank(), y = element_blank(), title = "P4 FDR")
+```
+
+#### Cluster
+
+```{r}
+#Participant 1
+names(clup1_2) <- "onsets"
+cluf1 <- as.numeric(unlist(clup1_2))
+#MAE
+clu_mae_v1 <- mean(abs(cluf1 - median(clu2$V1)))
+clusmpd1 <- median(cluf1)
+#Bias
+cluv1_bias <- (clusmpd1 - median(clu2$V1))
+#Plot histogram
+q9 <- ggplot(clup1_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(clu2$V1), clusmpd1), color= c("blue", "black")) +
+  geom_histogram(fill = "#F8766D", color = "darkred") +
+  labs(x = element_blank(), y = element_blank(), title = "P1 Cluster")
+#Participant 2
+names(clup2_2) <- "onsets"
+cluf2 <- as.numeric(unlist(clup2_2))
+#MAE
+clu_mae_v2 <- mean(abs(cluf2 - median(clu2$V2)))
+clusmpd2 <- median(cluf2)
+#Bias
+cluv2_bias <- (clusmpd2 - median(clu2$V2))
+#Plot hisogram
+q10 <- ggplot(clup2_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(clu2$V2), clusmpd2), color= c("blue", "black")) +
+  geom_histogram(fill = "#F8766D", color = "darkred") +
+  labs(x = element_blank(), y = element_blank(), title = "P2 Cluster")
+#Participant 3
+names(clup3_2) <- "onsets"
+cluf3 <- as.numeric(unlist(clup3_2))
+#MAE
+clu_mae_v3 <- mean(abs(cluf3 - median(clu2$V3)))
+clusmpd3 <- median(cluf3)
+#Bias
+cluv3_bias <- (clusmpd3 - median(clu2$V3))
+#Plot histogram
+q11 <- ggplot(clup3_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(clu2$V3), clusmpd3), color= c("blue", "black")) +
+  geom_histogram(fill = "#F8766D", color = "darkred") +
+  labs(x = element_blank(), y = element_blank(), title = "P3 Cluster")
+#Participant 4
+names(clup4_2) <- "onsets"
+cluf4 <- as.numeric(unlist(clup4_2))
+#MAE
+clu_mae_v4 <- mean(abs(cluf4 - median(clu2$V4)))
+clusmpd4 <- median(cluf4)
+#Bias
+cluv4_bias <- (clusmpd4 - median(clu2$V4))
+#Plot histogram
+q12 <- ggplot(clup4_2, aes(x = onsets)) +
+  geom_vline(xintercept = c(median(clu2$V4), clusmpd4), color= c("blue", "black")) +
+  geom_histogram(fill = "#F8766D", color = "darkred") +
+  labs(x = element_blank(), y = element_blank(), title = "P4 Cluster")
+```
+
+```{r}
+simfig <-
+  ggarrange(q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12)
+fig6 <-
+  annotate_figure(simfig,
+                  bottom = text_grob("Onsets time in ms"),
+                  left = text_grob("Count", rot = 90))
+#save figure
+ggsave(
+  "50sim",
+  plot = fig6,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 10,
+  height = 8,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+
+```{r}
+#quantiles
+#max
+qm1 <- quantile(maxf1, prob = c(0.25))
+qm2 <- quantile(maxf2, prob = c(0.25))
+qm3 <- quantile(maxf3, prob = c(0.25))
+qm4 <- quantile(maxf4, prob = c(0.25))
+#FDR
+qf1 <- quantile(fdrf1, prob = c(0.25))
+qf2 <- quantile(fdrf2, prob = c(0.25))
+qf3 <- quantile(fdrf3, prob = c(0.25))
+qf4 <- quantile(fdrf4, prob = c(0.25))
+#Cluster
+qc1 <- quantile(cluf1, prob = c(0.25))
+qc2 <- quantile(cluf2, prob = c(0.25))
+qc3 <- quantile(cluf3, prob = c(0.25))
+qc4 <- quantile(cluf4, prob = c(0.25))
+```
+  
+```{r}
+zoom <-
+  data.frame(
+    quantile = c(qm1, qm2, qm3, qm4, qf1, qf2, qf3, qf3, qc1, qc2, qc3, qc4),
+    bias = c(
+      maxv1_bias,
+      maxv2_bias,
+      maxv3_bias,
+      maxv4_bias,
+      fdrv1_bias,
+      fdrv2_bias,
+      fdrv3_bias,
+      fdrv4_bias,
+      cluv1_bias,
+      cluv2_bias,
+      cluv3_bias,
+      cluv4_bias
+    ),
+    MAE = c(
+      max_mae_v1,
+      max_mae_v2,
+      max_mae_v3,
+      max_mae_v4,
+      fdr_mae_v1,
+      fdr_mae_v2,
+      fdr_mae_v3,
+      fdr_mae_v4,
+      clu_mae_v1,
+      clu_mae_v2,
+      clu_mae_v3,
+      clu_mae_v4
+    ),
+    method = c(
+      "Max",
+      "Max",
+      "Max",
+      "Max",
+      "FDR",
+      "FDR",
+      "FDR",
+      "FDR",
+      "Cluster",
+      "Cluster",
+      "Cluster",
+      "Cluster"
+    ),
+    part = c(rep(c(1:4), times = 3))
+  )
+```
+  
+```{r}
+#Plot quantiles
+qm <- ggplot(zoom, aes(x = part, y = quantile)) +
+  geom_bar(aes(fill = method), position = "dodge", stat = "identity") +
+  labs(x = element_blank(), y = "Earliest Quantile") +
+  theme(legend.position = "none")
+#Plot bias
+bm <- ggplot(zoom, aes(x = part, y = bias)) +
+  geom_bar(aes(fill = method), position = "dodge", stat = "identity") +
+  labs(x = "Participant", y = "Bias") +
+  theme(legend.position = "none")
+#Plot MAE
+mm <- ggplot(zoom, aes(x = part, y = MAE)) +
+  geom_bar(aes(fill = method), position = "dodge", stat = "identity") +
+  labs(x = element_blank(), y = "MAE")
+fig7 <-
+  ggarrange(
+    qm,
+    bm,
+    mm,
+    nrow = 1,
+    labels = c("A", "B", "C"),
+    widths = c(2, 2, 3.5)
+  )
+#save figure
+ggsave(
+  "50qbmfig",
+  plot = fig7,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 6,
+  height = 3,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+  
+```{r}
+#Final simulation data
+fsimmax <- read.delim("max_onsets_sim_t2.txt", header = FALSE)
+fsimclu <- read.delim("cluster_onsets_sim_t2.txt", header = FALSE)
+fsimfdr <- read.delim("fdr_onsets_sim_t2.txt", header = FALSE)
+fsimfdr[fsimfdr == 999] <- NA
+fsimf <- fsimfdr %>% na.omit()
+```
+  
+### Plot histograms
+
+```{r}
+#max
+f1 <- ggplot(fsimmax, aes(x = V1)) +
+  geom_vline(xintercept = c(median(fsimmax$V1), 160), color= c("black", "red")) +
+  geom_histogram(fill = "#619CFF", color = "darkblue") + 
+  labs(x = element_blank(), y= "Count")
+#Cluster
+f2 <- ggplot(fsimclu, aes(x = V1)) +
+  geom_vline(xintercept = c(median(fsimclu$V1), 160), color= c("black", "red")) +
+  geom_histogram(fill = "#F8766D", color = "darkred") + 
+  labs(x = "Onsets time in ms", y = element_blank())
+#FDR
+f3 <- ggplot(fsimf, aes(x = V1)) +
+  geom_vline(xintercept = c(median(fsimf$V1), 160), color= c("black", "red")) +
+  geom_histogram(fill = "#00BA38", color = "darkgreen") + 
+  labs(x = element_blank(), y = element_blank())
+```
+  
+```{r}
+fig8 <- ggarrange(f1, f2, f3, nrow = 1, labels = c("A", "B", "C"))
+#save figure
+ggsave(
+  "finalhist",
+  plot = fig8,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 6,
+  height = 3,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+
+```{r}
+#Max
+fsimmax1 <- as.numeric(unlist(fsimmax))
+fsimmax2 <- as_data_frame(fsimmax1)
+names(fsimmax2)[1] <- "Max"
+#quantile
+qqm <- quantile(fsimmax$V1, prob = c(0.25))
+#Bias
+sampm <- fsimmax2[sample(nrow(fsimmax2), 10),]
+sampm1 <- as.numeric(unlist(sampm))
+fm_bias <- (median(sampm1) - median(fsimmax$V1))
+#MAE
+f_mae_m <- mean(abs(fsimmax2$Max - median(sampm1)))
+#FDR
+fsimfdr1 <- as.numeric(unlist(fsimf))
+fsimfdr2 <- as_data_frame(fsimfdr1)
+names(fsimfdr2)[1] <- "FDR"
+#quantile
+qqf <- quantile(fsimf$V1, prob = c(0.25))
+#Bias
+sampf <- fsimfdr2[sample(nrow(fsimfdr2), 10),]
+sampf1 <- as.numeric(unlist(sampf))
+ff_bias <- (median(sampf1) - median(fsimf$V1))
+#MAE
+f_mae_f <- mean(abs(fsimfdr2$FDR - median(sampf1)))
+#Cluster
+fsimclu1 <- as.numeric(unlist(fsimclu))
+fsimclu2 <- as_data_frame(fsimclu1)
+names(fsimclu2)[1] <- "Cluster"
+#quantile
+qqc <- quantile(fsimclu$V1, prob = c(0.25))
+#Bias
+sampc <- fsimclu2[sample(nrow(fsimclu2), 10),]
+sampc1 <- as.numeric(unlist(sampc))
+fc_bias <- (median(sampc1) - median(fsimclu$V1))
+#MAE
+f_mae_c <- mean(abs(fsimclu2$Cluster - median(sampc1)))
+zoom1 <-
+  data.frame(
+    quantile = c(qqc, qqf, qqm),
+    bias = c(fc_bias, ff_bias, fm_bias),
+    MAE = c(f_mae_c, f_mae_f, f_mae_m),
+    method = c("Cluster", "FDR", "Max")
+  )
+```
+
+```{r}
+#Plot quantile
+qm1 <- ggplot(zoom1, aes(x = method, y = quantile)) +
+  geom_bar(aes(fill = method), position = "dodge", stat = "identity") +
+  labs(x = element_blank(), y = "Earliest Quantile") +
+  theme(legend.position = "none")
+#plot bias
+bm1 <- ggplot(zoom1, aes(x = method, y = bias)) +
+  geom_bar(aes(fill = method), position = "dodge", stat = "identity") +
+  labs(x = "Method", y = "Bias") +
+  theme(legend.position = "none")
+#plot MAE
+mm1 <- ggplot(zoom1, aes(x = method, y = MAE)) +
+  geom_bar(aes(fill = method), position = "dodge", stat = "identity") +
+  labs(x = element_blank(), y = "MAE")
+fig9 <- ggarrange(qm1, bm1, mm1, nrow = 1, labels = c("A", "B", "C"))
+```
+
+```{r}
+#save figure
+ggsave(
+  "finalqbm",
+  plot = fig9,
+  device = "jpeg",
+  path = NULL,
+  scale = 1,
+  width = 6,
+  height = 3,
+  units = c("in"),
+  dpi = 300,
+  limitsize = TRUE,
+  bg = NULL,
+)
+```
+
